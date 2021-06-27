@@ -1,8 +1,9 @@
 from __future__ import annotations
-from typing import Tuple
 from abc import ABC, abstractmethod
-from classes.board import Board
 from enum import Enum, auto
+from typing import Tuple, TYPE_CHECKING
+if TYPE_CHECKING:
+    from classes.board import Board
 
 
 class Team (Enum):

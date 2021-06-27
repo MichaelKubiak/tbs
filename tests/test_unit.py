@@ -1,12 +1,13 @@
 import pytest
+from classes.entity import Team
 from classes.unit import Unit, MovedError
 from classes.board import Board, TooManyTurnsError, SpaceFullError
 
 
 def test_ID():
     b = Board(8, 8)
-    u = Unit((0, 0, 0), "red", b)
-    u2 = Unit((0, 1, 0), "blue", b)
+    u = Unit((0, 0, 0), Team.RED, b)
+    u2 = Unit((0, 1, 0), Team.BLUE, b)
 
     assert u.get_ID() == 0
     assert u2.get_ID() == 1
@@ -14,7 +15,7 @@ def test_ID():
 
 def test_move():
     b = Board(8, 8)
-    u = Unit((0, 0, 0), "red", b)
+    u = Unit((0, 0, 0), Team.RED, b)
 
     assert u.get_pos(-1) == (0, 0, 0)
     u.move(4, 3)
@@ -33,8 +34,8 @@ def test_move():
 
 
 def test_health():
-    b=Board(8,8)
-    u = Unit((0, 0, 0), "red")
+    b = Board(8, 8)
+    u = Unit((0, 0, 0), Team.RED, b)
 
     # has starting health and position
     assert u.get_health() == 100

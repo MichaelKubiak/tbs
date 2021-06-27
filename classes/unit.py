@@ -1,5 +1,4 @@
-from __future__ import annotations
-from classes.entity import Entity
+from classes.entity import Entity, Team
 from typing import Tuple, List
 from classes.board import Board, SpaceFullError
 
@@ -8,7 +7,7 @@ class Unit(Entity):
     """
     Base class for units
     """
-    def __init__(self, pos: Tuple, team: str, board: Board = None):
+    def __init__(self, pos: Tuple, team: Team, board: Board):
         self._dead = False
         super().__init__(pos, team, board)
         self._history = [self._pos]
@@ -19,7 +18,7 @@ class Unit(Entity):
 
     def destroy(self):
         self._dead = True
-        self._history.append(self._pos.as_tuple())
+        self._history.append(self._pos)
         self._pos = None
 
     def is_dead(self) -> bool:
@@ -30,7 +29,7 @@ class Unit(Entity):
             raise MovedError
         if (x, y) in self._board.full(self._pos.get_t() + 1):
             raise SpaceFullError
-        self._history.append(self._pos.as_tuple)
+        self._history.append(self._pos)
         self._pos.move(x, y, 1)
         self._moved = True
 

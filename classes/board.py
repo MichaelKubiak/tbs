@@ -1,6 +1,7 @@
 from __future__ import annotations
-from typing import List, Tuple
-from classes.entity import Entity
+from typing import List, Tuple, TYPE_CHECKING
+if TYPE_CHECKING:
+    from classes.entity import Entity
 
 
 class Board:
@@ -11,7 +12,7 @@ class Board:
         self._entities = []
         self._full = []
         self._turn = 0
-        self._changed = set()      # set of turns with a changed board state since the last time unavailable was set
+        self._changed = {0}  # set of turns with a changed board state since the last time unavailable was set
         self.set_full(0)
 
     def get_width(self) -> int:
@@ -41,6 +42,8 @@ class Board:
         self._changed.remove(t)
 
     def full(self, t: int) -> List[Tuple]:
+        if len(self._full) <= t:
+            return []
         if t in self._changed:
             self.set_full(t)
         return self._full[t]
