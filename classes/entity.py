@@ -2,8 +2,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 from typing import Tuple, TYPE_CHECKING
-if TYPE_CHECKING:
-    from classes.board import Board
 
 
 class Team (Enum):
@@ -21,23 +19,20 @@ class Entity(ABC):
     nextID = 0
     maxHealth = 100
     
-    def __init__(self, pos: Tuple, team: Team, board: Board):
-        self._ID = Entity.nextID
-        Entity.nextID += 1
-        self._health = Entity.maxHealth
+    def __init__(self, pos: Tuple, team: Team, entity_id: int = None, health: int = None):
+        if not entity_id:
+            self._ID = Entity.nextID
+            Entity.nextID += 1
+        if not health:
+            self._health = Entity.maxHealth
         self._team = team
-        self._board = board
-        self._board.set_changed(pos[2])
-        self._pos = self.Position(pos, board.get_turn())
+        self._pos = self.Position(pos)
 
     def get_ID(self) -> int:
         return self._ID
 
-    def get_pos(self, t) -> Tuple or None:
-        if self._pos is not None:
-            return self._pos.as_tuple()
-        else:
-            return None
+    def get_pos(self) -> Tuple:
+        return self._pos.as_tuple()
 
     def get_health(self) -> int:
         return self._health
@@ -56,26 +51,25 @@ class Entity(ABC):
     @abstractmethod
     def destroy(self):
         pass
-    
+
+    @abstractmethod
+    def apply_order(self):
+        pass
+
     class Position:
-        def __init__(self, pos: Tuple, t: int):
+        def __init__(self, pos: Tuple):
             self._x = pos[0]
             self._y = pos[1]
-            self._t = t
 
-        def move(self, x: int, y: int, t: int):
+        def move(self, x: int, y: int):
             self._x += x
             self._y += y
-            self._t += t
 
         def as_tuple(self) -> Tuple:
-            return self._x, self._y, self._t
+            return self._x, self._y
 
         def get_x(self) -> int:
             return self._x
 
         def get_y(self) -> int:
             return self._y
-
-        def get_t(self) -> int:
-            return self._t
