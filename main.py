@@ -1,8 +1,5 @@
 #! /usr/bin/env python
 
-from classes.unit import Unit
-from classes.board import Board
-
 def main():
     ...
 
