@@ -11,7 +11,7 @@ __Classes__
  - board class
    - has tile list - Fixed through game 
  - tile (abstract) class
-   - has move effect,
+   - has move effect
  
 make a board
 make a unit
