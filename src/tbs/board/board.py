@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import List
 
 
@@ -18,6 +19,14 @@ class Board:
         self._states = [[x * [y * True]]]
 
     @property
+    def x(self):
+        return self._x
+
+    @property
+    def y(self):
+        return self._y
+
+    @property
     def states(self):
         return self._states
 
@@ -32,17 +41,24 @@ class Board:
         """
         return self.states[turn]
 
-    def pos_state(self, pos):
-        return self.state(pos.t)[pos.x][pos.y]
-
     def set_state(self, pos: Position, value: bool):
+        try:
+            self.state(pos.t)
+        except IndexError:
+            self.add_turn()
         self.state(pos.t)[pos.x][pos.y] = value
 
     def empty(self, pos: Position):
-        return self.states[pos.t][pos.x][pos.y]
+        try:
+            return self.state(pos.t)[pos.x][pos.y]
+        except IndexError:
+            return True
 
     def occupy(self, pos: Position):
         self.set_state(pos, False)
+
+    def add_turn(self):
+        self.states.append([self.x * [self.y * True]])
 
 
 class Position(object):

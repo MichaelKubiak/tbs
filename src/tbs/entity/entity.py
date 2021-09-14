@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List
 from enum import Enum, auto
+from typing import List
+
 from tbs.board.board import Position, PositionObstructedError
 
 
@@ -17,21 +18,49 @@ class Entity(ABC):
     _team: Team
     _max_health: int
 
-    def __init__(self, team: Team, turn: int, pos: Position):
+    def __init__(self, team: Team, pos: Position):
         self._team = team
         self._health = self._max_health
-        self._orders = [Entity.Create(turn, pos)]
+        self._orders = [Entity.Create(pos)]
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self.created == other.created and self.start_pos == other.start_pos
+        return False
+
+    def __lt__(self, other):
+        if self == other:
+            return len(self.orders) < len(other.orders)
+        raise DifferentEntityError("{} vs {}".format(self, other))
+
+    def __gt__(self, other):
+        if self == other:
+            return len(self.orders) > len(other.orders)
+        raise DifferentEntityError("{} vs {}".format(self, other))
+
+    def __str__(self):
+        return f"""
+            class: {self.__class__.__name__}
+            team: {self.team}
+            health: {self.health}/{self.health}
+            start position: {self.start_pos}
+            created: {self.created}
+            """
 
     @property
     def team(self):
         """
-        The team in the battle to which the entity currently belongs
+        The team to which the entity currently belongs
         """
         return self._team
 
     @team.setter
     def team(self, new_team: Team):
         self._team = new_team
+
+    @property
+    def max_health(self):
+        return self.max_health
 
     @property
     def health(self):
@@ -73,6 +102,13 @@ class Entity(ABC):
     def created(self):
         return self.orders[0].length
 
+    def create(self):
+        create = self.orders[0]
+        if create.__class__ == Entity.Create:
+            return create.execute()
+        else:
+            raise MissingCreateOrderError("The create order for this entity is missing")
+
     @property
     def orders(self):
         """
@@ -83,21 +119,24 @@ class Entity(ABC):
 
     def order(self, turn: int):
         """
-        TODO: WORK OUT HOW MULTIPLE ORDERS ON A TURN WORK (maybe last time that an order ends on a turn?)
         Gets the order given on turn
         """
-        return self._orders[turn + self.created]
+        order = None
+        t = 0
+        for o in self.orders:
+            if t == turn:
+                order = o
+            t += o.length
+        return order
 
     def give_order(self, order: Order):
-        self._orders.append(order)
+        self.orders.append(order)
 
     def change_order(self, turn: int, order: Order):
-        self._orders[turn + self.created] = order
-
-    @property
-    @abstractmethod
-    def max_health(self):
-        pass
+        if turn >= 0 and self.order(0):
+            self.orders[turn - self.created] = order
+        else:
+            raise OrderOutOfBoundsError("Cannot change order prior to turn 0")
 
     @abstractmethod
     def pos(self, turn: int):
@@ -118,8 +157,16 @@ class Entity(ABC):
         _target: Position
         _length: int
 
-        def __init__(self, target: Position):
+        def __init__(self, target: Position, length: int):
             self._target = target
+            self._length = length
+
+        def __eq__(self, other):
+            if type(self) is type(other):
+                return self.target == other.target and self.length == other.length
+
+        def __str__(self):
+            return f"{self.__class__.__name__} towards {self.target} taking {self.length} turns"
 
         @property
         def target(self):
@@ -133,7 +180,6 @@ class Entity(ABC):
             return self._target
 
         @property
-        @abstractmethod
         def length(self):
             """
             The number of turns that the order takes to complete
@@ -153,9 +199,11 @@ class Entity(ABC):
         Create order, determines where and when the entity is created
         """
 
-        def __init__(self, turn: int, pos: Position):
-            self.length = turn
-            super().__init__(pos)
+        def __init__(self, pos: Position):
+            super().__init__(pos, 1)
+
+        def __str__(self):
+            return f"Create entity at {self.target} on turn {self.length}"
 
         @property
         def length(self):
@@ -172,9 +220,7 @@ class Entity(ABC):
 
             Returns: Position
             """
-            start_pos = Position(
-                self.target.board, self.target.x, self.target.y, self.length
-            )
+            start_pos = self.target
             if start_pos.is_empty:
                 start_pos.occupy_position()
                 return start_pos
@@ -188,3 +234,22 @@ class Entity(ABC):
         BLUE = auto()
         YELLOW = auto()
         NEUTRAL = auto()
+
+
+class DifferentEntityError(Exception):
+    """
+    Raise this when different entities are compared in a way that does not make
+    sense
+    """
+
+
+class MissingCreateOrderError(Exception):
+    """
+    Raise this when the first order of an entity is not a Create order
+    """
+
+
+class OrderOutOfBoundsError(Exception):
+    """
+    Raise this when an order with negative index would be accessed or changed
+    """
