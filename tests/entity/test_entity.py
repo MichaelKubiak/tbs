@@ -9,7 +9,7 @@ from tbs.entity.entity import (
     MissingCreateOrderError,
     OrderOutOfBoundsError,
 )
-from entity_fixtures import (
+from .entity_fixtures import (
     test_position,
     test_entity,
     test_entity_with_order,
@@ -17,6 +17,8 @@ from entity_fixtures import (
     test_order,
     TestOrder,
 )
+
+TestOrder.__test__ = False  # Tell pytest not to attempt collection
 
 
 @m.describe("Entity")
