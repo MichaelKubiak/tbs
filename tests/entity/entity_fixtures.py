@@ -8,12 +8,17 @@ class TestEntity(Entity):
     def __init__(self, team: Entity.Team, pos: Position):
         self._max_health = 100
         super().__init__(team, pos)
+        self._destroyed = False
+
+    @property
+    def destroyed(self):
+        return self._destroyed
 
     def pos(self, turn: int):
         pass
 
     def destroy(self):
-        pass
+        self._destroyed = True
 
 
 class TestOrder(Entity.Order):

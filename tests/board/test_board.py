@@ -1,12 +1,15 @@
 from pytest import mark as m
-import pytest
 
 from tbs.board.board import Board, Position
-from .board_fixtures import test_board
+from .board_fixtures import test_position, test_board
 
 
 @m.describe("Position")
 class TestPosition(object):
-    @m.it("Can equate to an identical Position object")
-    def test_equals(self, test_board):
-        assert Position(test_board, 0, 0, 0) == Position(test_board, 0, 0, 0)
+    @m.it("Can determine equality")
+    def test_equals(self, test_position, test_board):
+        assert test_position == Position(test_board, 0, 0, 0)
+        assert test_position != Position(test_board, 1, 0, 0)
+        assert test_position != Position(test_board, 0, 1, 0)
+        assert test_position != Position(test_board, 0, 0, 1)
+        assert test_position != (test_board, 0, 0, 0)

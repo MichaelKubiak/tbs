@@ -60,7 +60,7 @@ class Entity(ABC):
 
     @property
     def max_health(self):
-        return self.max_health
+        return self._max_health
 
     @property
     def health(self):
@@ -82,7 +82,7 @@ class Entity(ABC):
             damage: the amount of damage done to the entity
         """
         self.health -= damage
-        if self.health < 0:
+        if self.health <= 0:
             self.destroy()
 
     def repair(self, damage: int):
@@ -100,7 +100,7 @@ class Entity(ABC):
 
     @property
     def created(self):
-        return self.orders[0].length
+        return self.orders[0].target.t
 
     def create(self):
         create = self.orders[0]
@@ -122,7 +122,7 @@ class Entity(ABC):
         Gets the order given on turn
         """
         order = None
-        t = 0
+        t = self.created
         for o in self.orders:
             if t == turn:
                 order = o
@@ -133,8 +133,11 @@ class Entity(ABC):
         self.orders.append(order)
 
     def change_order(self, turn: int, order: Order):
-        if turn >= 0 and self.order(0):
-            self.orders[turn - self.created] = order
+        index = turn - self.created
+        if index > 0:
+            self.orders[index] = order
+        elif index == 0:
+            raise OrderOutOfBoundsError("Cannot change creation order")
         else:
             raise OrderOutOfBoundsError("Cannot change order prior to turn 0")
 
@@ -208,10 +211,6 @@ class Entity(ABC):
         @property
         def length(self):
             return super().length
-
-        @length.setter
-        def length(self, turn):
-            self._length = turn
 
         def execute(self):
             """

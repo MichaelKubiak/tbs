@@ -1,2 +1,6 @@
 *__pycache__*
 .idea
+*,cover
+.coverage
+coverage.xml
+tbs.egg-info

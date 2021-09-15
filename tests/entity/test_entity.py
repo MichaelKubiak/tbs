@@ -27,6 +27,7 @@ class TestEntity(object):
     @m.it("Can equate to the same entity")
     def test_equals_identical(self, test_entity):
         assert test_entity == test_entity
+        assert test_entity != 0
 
     @m.context("When order lists are different lengths")
     @m.it("Can equate to the same entity")
@@ -67,7 +68,7 @@ class TestEntity(object):
     )  # TODO: may want to add to this later (create in nearest possible location?
     def test_create_obstructed(self, test_entity):
         _ = test_entity.create()
-        create_target = test_entity.order(0).target
+        create_target = test_entity.order(1).target
         with pytest.raises(
             PositionObstructedError,
             match=r"^Could not create entity at x:{} y:{} turn:{}".format(
@@ -86,6 +87,14 @@ class TestEntity(object):
         ):
             test_entity.create()
 
+    @m.context("When attempting to change creation order")
+    @m.it("Raises an error")
+    def test_change_create(self, test_entity, test_order):
+        with pytest.raises(
+            OrderOutOfBoundsError, match=r"^Cannot change creation order"
+        ):
+            test_entity.change_order(1, test_order)
+
     @m.context("When attempting to change out of bounds order")
     @m.it("Raises an error")
     def test_change_oob(self, test_entity, test_order):
@@ -94,13 +103,19 @@ class TestEntity(object):
         ):
             test_entity.change_order(-2, test_order)
 
+    @m.it("Can change an order")
+    def test_change(self, test_entity_with_order, test_order):
+        new_order = TestOrder(Position(test_order.target.board, 1, 1), 1)
+        assert test_entity_with_order.order(2) == test_order
+        test_entity_with_order.change_order(2, new_order)
+        assert test_entity_with_order.order(2) == new_order
+
     @m.context("When orders are linear")
     @m.it("Can get order on a given turn")
     def test_order_selection_linear(
         self, test_entity_with_order, test_order, test_position
     ):
-        assert test_entity_with_order.order(0) == Entity.Create(test_position)
-        assert test_entity_with_order.order(1) == test_order
+        assert test_entity_with_order.order(2) == test_order
 
     @m.context("When orders include reverse time travel")
     @m.it("Can get order on a given turn")
@@ -114,6 +129,36 @@ class TestEntity(object):
         diff_test_order = TestOrder(Position(test_position.board, 1, 1), 1)
         for i in range(2):
             test_entity_with_order.give_order(diff_test_order)
-        assert test_entity_with_order.order(1) == test_order
-        assert test_entity_with_order.order(6) == time_travel_order
-        assert test_entity_with_order.order(3) == diff_test_order
+        assert test_entity_with_order.order(2) == test_order
+        assert test_entity_with_order.order(7) == time_travel_order
+        assert test_entity_with_order.order(4) == diff_test_order
+
+    @m.it("Can change team")
+    def test_change_team(self, test_entity):
+        assert test_entity.team == Entity.Team.RED
+        test_entity.team = Entity.Team.BLUE
+        assert test_entity.team == Entity.Team.BLUE
+
+    @m.context("When taking damage")
+    @m.it("Loses health")
+    def test_damage(self, test_entity):
+        assert test_entity.health == test_entity.max_health
+        test_entity.damage(10)
+        assert test_entity.health == test_entity.max_health - 10
+
+    @m.context("When taking more damage than current health")
+    @m.it("Runs 'destroy' method")
+    def test_destroy(self, test_entity):
+        assert test_entity.destroyed is False
+        test_entity.damage(test_entity.max_health)
+        assert test_entity.destroyed
+
+    @m.context("When repaired")
+    @m.it("Is repaired to the minimum of max health or current health + repair value")
+    def test_repair(self, test_entity):
+        test_entity.damage(50)
+        assert test_entity.health == test_entity.max_health - 50
+        test_entity.repair(20)
+        assert test_entity.health == test_entity.max_health - 30
+        test_entity.repair(50)
+        assert test_entity.health == test_entity.max_health
