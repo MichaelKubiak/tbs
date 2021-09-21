@@ -1,11 +1,13 @@
 import pytest
 
-from tbs.entity.entity import Entity
+from tbs.entity.entity import Entity, Team
 from tbs.board.board import Position, Board
+
+from tests.board.board_fixtures import test_position
 
 
 class TestEntity(Entity):
-    def __init__(self, team: Entity.Team, pos: Position):
+    def __init__(self, team: Team, pos: Position):
         self._max_health = 100
         super().__init__(team, pos)
         self._destroyed = False
@@ -22,35 +24,44 @@ class TestEntity(Entity):
 
 
 class TestOrder(Entity.Order):
-    def __init__(self, target, length):
-        super().__init__(target, length)
+    def __init__(self, entity: Entity, target, length):
+        super().__init__(entity, target, length)
 
     def execute(self):
         pass
 
 
 @pytest.fixture(scope="function")
-def test_position():
-    return Position(Board(1, 1), 0, 0, 1)
-
-
-@pytest.fixture(scope="function")
 def test_entity(test_position):
-    return TestEntity(Entity.Team.RED, test_position)
+    """
+    A pytest fixture for testing the Entity abstract base class
+    """
+    return TestEntity(Team.RED, test_position)
 
 
 @pytest.fixture(scope="function")
-def test_order(test_position):
-    return TestOrder(test_position, 1)
+def test_order(test_entity, test_position):
+    """
+    A pytest fixture for testing the Order abstract base class
+    """
+    return TestOrder(test_entity, test_position, 1)
 
 
 @pytest.fixture(scope="function")
 def test_entity_with_order(test_position, test_order):
-    entity = TestEntity(Entity.Team.RED, test_position)
+    """
+    A pytest fixture for testing the Entity abstract base class with multiple
+    orders given
+    """
+    entity = TestEntity(Team.RED, test_position)
     entity.give_order(test_order)
     return entity
 
 
 @pytest.fixture(scope="function")
 def not_test_entity():
-    return TestEntity(Entity.Team.RED, Position(Board(1, 1), 1, 0, 0))
+    """
+    A pytest fixture that is not equal to test_entity for testing __eq__ of the
+    Entity abstract base class
+    """
+    return TestEntity(Team.RED, Position(Board(1, 1), 1, 0, 0))

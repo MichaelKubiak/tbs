@@ -5,18 +5,19 @@ import pytest
 from tbs.board.board import Position, PositionObstructedError
 from tbs.entity.entity import (
     Entity,
+    Team,
     DifferentEntityError,
     MissingCreateOrderError,
     OrderOutOfBoundsError,
 )
-from .entity_fixtures import (
-    test_position,
+from tests.entity.entity_fixtures import (
     test_entity,
     test_entity_with_order,
     not_test_entity,
     test_order,
     TestOrder,
 )
+from tests.board.board_fixtures import test_position, test_board
 
 TestOrder.__test__ = False  # Tell pytest not to attempt collection
 
@@ -105,7 +106,9 @@ class TestEntity(object):
 
     @m.it("Can change an order")
     def test_change(self, test_entity_with_order, test_order):
-        new_order = TestOrder(Position(test_order.target.board, 1, 1), 1)
+        new_order = TestOrder(
+            test_entity_with_order, Position(test_order.target.board, 1, 1), 1
+        )
         assert test_entity_with_order.order(2) == test_order
         test_entity_with_order.change_order(2, new_order)
         assert test_entity_with_order.order(2) == new_order
@@ -124,9 +127,11 @@ class TestEntity(object):
     ):
         for i in range(4):
             test_entity_with_order.give_order(test_order)
-        time_travel_order = TestOrder(test_position, -3)
+        time_travel_order = TestOrder(test_entity_with_order, test_position, -3)
         test_entity_with_order.give_order(time_travel_order)
-        diff_test_order = TestOrder(Position(test_position.board, 1, 1), 1)
+        diff_test_order = TestOrder(
+            test_entity_with_order, Position(test_position.board, 1, 1), 1
+        )
         for i in range(2):
             test_entity_with_order.give_order(diff_test_order)
         assert test_entity_with_order.order(2) == test_order
@@ -135,9 +140,9 @@ class TestEntity(object):
 
     @m.it("Can change team")
     def test_change_team(self, test_entity):
-        assert test_entity.team == Entity.Team.RED
-        test_entity.team = Entity.Team.BLUE
-        assert test_entity.team == Entity.Team.BLUE
+        assert test_entity.team == Team.RED
+        test_entity.team = Team.BLUE
+        assert test_entity.team == Team.BLUE
 
     @m.context("When taking damage")
     @m.it("Loses health")
