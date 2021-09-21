@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from enum import Enum, auto
 from typing import List
 
-from tbs.board.board import Position, PositionObstructedError
+from tbs.board.board import Board, Position, PositionObstructedError
 
 
 class Entity(ABC):
@@ -17,11 +17,13 @@ class Entity(ABC):
     _orders: List[Order]
     _team: Team
     _max_health: int
+    _board: Board
 
     def __init__(self, team: Team, pos: Position):
         self._team = team
         self._health = self._max_health
-        self._orders = [Entity.Create(pos)]
+        self._orders = [Entity.Create(self, pos)]
+        self._board = pos.board
 
     def __eq__(self, other):
         if type(other) is type(self):
@@ -157,19 +159,32 @@ class Entity(ABC):
         - Perform special building action at [pos]
         """
 
+        _entity: Entity
         _target: Position
         _length: int
 
-        def __init__(self, target: Position, length: int):
+        def __init__(self, entity: Entity, target: Position, length: int):
+            self._entity = entity
             self._target = target
             self._length = length
 
         def __eq__(self, other):
             if type(self) is type(other):
-                return self.target == other.target and self.length == other.length
+                return (
+                    self.entity == other.entity
+                    and self.target == other.target
+                    and self.length == other.length
+                )
 
         def __str__(self):
             return f"{self.__class__.__name__} towards {self.target} taking {self.length} turns"
+
+        @property
+        def entity(self):
+            """
+            The entity that will perform the order
+            """
+            return self._entity
 
         @property
         def target(self):
@@ -202,11 +217,14 @@ class Entity(ABC):
         Create order, determines where and when the entity is created
         """
 
-        def __init__(self, pos: Position):
-            super().__init__(pos, 1)
+        def __init__(self, entity: Entity, pos: Position):
+            super().__init__(entity, pos, 1)
 
         def __str__(self):
-            return f"Create entity at {self.target} on turn {self.length}"
+            return (
+                f"Create {self.entity.__class__.__name__} at {self.target} "
+                f"on turn {self.length}"
+            )
 
         @property
         def length(self):
@@ -214,25 +232,26 @@ class Entity(ABC):
 
         def execute(self):
             """
-            Returns the starting position of the entity if that is an allowable
+            Returns the position of the entity upon creation if that is an allowable
             position
 
             Returns: Position
             """
-            start_pos = self.target
-            if start_pos.is_empty:
-                start_pos.occupy_position()
-                return start_pos
+            create_pos = self.target
+            if create_pos.is_empty:
+                create_pos.occupy_position()
+                return create_pos
             else:
                 raise PositionObstructedError(
-                    "Could not create entity at {}".format(start_pos)
+                    "Could not create entity at {}".format(create_pos)
                 )
 
-    class Team(Enum):
-        RED = auto()
-        BLUE = auto()
-        YELLOW = auto()
-        NEUTRAL = auto()
+
+class Team(Enum):
+    RED = auto()
+    BLUE = auto()
+    YELLOW = auto()
+    NEUTRAL = auto()
 
 
 class DifferentEntityError(Exception):
